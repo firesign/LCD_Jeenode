@@ -481,13 +481,15 @@ void setup() {
     config.group = 0xD4;  // default group 212
     saveConfig();
   }
-
+  
+  digitalWrite(ledPin, HIGH);  
   df_initialize();
   
   showHelp();
   
   delay(3000);
   lcd.clear();
+  digitalWrite(ledPin, LOW);
 }
 
 void loop() {
@@ -650,7 +652,7 @@ void loop() {
             lcd.print(remote10CO);
             //lcd.print("/1024");
             
-            if (remote10door == 1) {
+            if (remote10door == 0) {
                 lcd.setCursor(9,3);
                 lcd.print("  Door");
                 writeNewColon();
