@@ -353,20 +353,20 @@ static void handleInput (char c) {
         memcpy(testbuf, stack, top);
         break;
       case 'l': // turn activity LED on or off
-        activityLed(value);
+        //activityLed(value);
         break;
       case 'f': // send FS20 command: <hchi>,<hclo>,<addr>,<cmd>f
         rf12_initialize(0, RF12_868MHZ);
-        activityLed(1);
+        //activityLed(1);
         fs20cmd(256 * stack[0] + stack[1], stack[2], value);
-        activityLed(0);
+        //activityLed(0);
         rf12_config(0); // restore normal packet listening mode
         break;
       case 'k': // send KAKU command: <addr>,<dev>,<on>k
         rf12_initialize(0, RF12_433MHZ);
-        activityLed(1);
+        //activityLed(1);
         kakuSend(stack[0], stack[1], value);
-        activityLed(0);
+        //activityLed(0);
         rf12_config(0); // restore normal packet listening mode
         break;
       //case 'd': // dump all log markers
@@ -471,7 +471,7 @@ void setup() {
     
     Serial.begin(SERIAL_BAUD);
     displayVersion(0);
-    activityLed(0);
+    //activityLed(0);
 
   if (rf12_config()) {
     config.nodeId = eeprom_read_byte(RF12_EEPROM_ADDR);
@@ -550,7 +550,16 @@ void loop() {
             
             remote10CO = (rf12_data[8] + (rf12_data[9] * 256)) - 1;
             
-            remote10door = rf12_data[10];
+            remote10door = rf12_data[12];
+            
+            //Serial.print("rf12_data[10]= ");
+            //Serial.println(rf12_data[10]);
+            //Serial.print("rf12_data[11]= ");
+            //Serial.println(rf12_data[11]);
+            //Serial.print("rf12_data[12]= ");
+            //Serial.println(rf12_data[12]);
+            //Serial.print("rf12_data[13]= ");
+            //Serial.println(rf12_data[13]);
             
             updateGar = true;
         }
@@ -565,7 +574,7 @@ void loop() {
         Serial.println();
         
         if (rf12_crc == 0) {
-            activityLed(1);
+            //activityLed(1);
           
             //if (df_present())
             //df_append((const char*) rf12_data - 2, rf12_len + 2);
@@ -575,12 +584,12 @@ void loop() {
           rf12_sendStart(RF12_ACK_REPLY, 0, 0);
         }
           
-          activityLed(0);
+          //activityLed(0);
         }
     }
 
     if (cmd && rf12_canSend()) {
-        activityLed(1);
+        //activityLed(1);
     
         Serial.print(" -> ");
         Serial.print((int) sendLen);
@@ -591,7 +600,7 @@ void loop() {
         rf12_sendStart(header, testbuf, sendLen);
         cmd = 0;
     
-        activityLed(0);
+        //activityLed(0);
         
       }
         // LCD print routines
@@ -656,15 +665,17 @@ void loop() {
                 lcd.setCursor(9,3);
                 lcd.print("  Door");
                 writeNewColon();
-                writeNewClosed();
-                digitalWrite(ledPin, LOW);
+                writeNewOpen();
+                digitalWrite(ledPin, HIGH);
+                //Serial.println("Door is open");
             }
             else {
                 lcd.setCursor(9,3);
                 lcd.print("  Door");
                 writeNewColon();
-                writeNewOpen();
-                digitalWrite(ledPin, HIGH);
+                writeNewClosed();
+                digitalWrite(ledPin, LOW);
+                //Serial.println("Door is closed");
             }
             updateGar = false;
         }
