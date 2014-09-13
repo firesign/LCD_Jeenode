@@ -74,7 +74,17 @@ int remote10temp,remote10tempW,remote10tempF,remote10hum,remote10humW,remote10hu
 int remote10btemp,remote10btempW,remote10btempF,remote10bhum,remote10bhumW,remote10bhumF;
 int remote10CO;
 boolean updateOut,updateGar,remote10door;
-int ledPin(5);
+
+static unsigned long lastMillis = 0; // holds the last read millis()
+static int timer_1 = 0; // a repeating timer max time 32768 mS = 32sec use a long if you need a longer timer
+// NOTE timer MUST be a signed number int or long as the code relies on timer_1 being able to be negative
+// NOTE timer_1 is a signed int
+#define TIMER_INTERVAL_1 1000
+// 1S interval
+
+int ledPin = 5;
+boolean ledState = 1;
+boolean garageOpen = false;
 
 // ATtiny's only support outbound serial @ 38400 baud, and no DataFlash logging
 
@@ -103,6 +113,36 @@ static void activityLed (byte on) {
     digitalWrite(LED_PIN, !on);
 #endif
 }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// LED Blinker function
+
+static void ledTimer() {
+ // set millisTick at the top of each loop if and only if millis() has changed
+  unsigned long deltaMillis = 0; // clear last result
+  unsigned long thisMillis = millis(); 
+  // do this just once to prevent getting different answers from multiple calls to   millis()
+  if (thisMillis != lastMillis) {
+  // we have ticked over
+  // calculate how many millis have gone past  
+  deltaMillis = thisMillis-lastMillis; // note this works even if millis() has rolled over back to 0
+  lastMillis = thisMillis;
+}
+  // handle repeating timer
+  // repeat this code for each timer you need to handle
+  timer_1 -= deltaMillis;
+  if (timer_1 <= 0) {
+    // reset timer since this is a repeating timer
+    timer_1 += TIMER_INTERVAL_1; // note this prevents the delay accumulating if we miss a mS or two 
+    ledState = !ledState;
+    if (ledState == 1) {
+      digitalWrite(ledPin, HIGH);
+    } else {
+      digitalWrite(ledPin, LOW);
+    }
+  } 
+}
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // RF12 configuration setup code
@@ -490,6 +530,11 @@ void setup() {
   delay(3000);
   lcd.clear();
   digitalWrite(ledPin, LOW);
+  
+  // For LED blinker: initialize the digital pin as an output.
+  pinMode(ledPin, OUTPUT);  
+  timer_1 = TIMER_INTERVAL_1; // timeout in first loop 
+  lastMillis = millis(); // do this last in setup
 }
 
 void loop() {
@@ -666,7 +711,8 @@ void loop() {
                 lcd.print("  Door");
                 writeNewColon();
                 writeNewOpen();
-                digitalWrite(ledPin, HIGH);
+                //digitalWrite(ledPin, HIGH);
+                garageOpen = true;
                 //Serial.println("Door is open");
             }
             else {
@@ -675,9 +721,13 @@ void loop() {
                 writeNewColon();
                 writeNewClosed();
                 digitalWrite(ledPin, LOW);
+                garageOpen = false;
                 //Serial.println("Door is closed");
             }
             updateGar = false;
         }
-    
+        
+        if (garageOpen == true) {
+          ledTimer();
+        }
     }
